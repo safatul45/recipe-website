@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.pkl
+*.npy
+*.faiss
+data/processed/
+models/
+data/*.csv
+!data/.gitkeep
+.vscode/
+.idea/
+*.log
+.DS_Store

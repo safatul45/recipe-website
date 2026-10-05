@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe Finder</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif;
+               max-width: 1000px; margin: 40px auto;
+               padding: 0 20px; background: #f7f7f8; color: #222; }
+        h1 { color: #c0392b; margin-bottom: 4px; }
+        .subtitle { color: #666; margin-bottom: 24px; }
+        .search-box { display: flex; flex-wrap: wrap; gap: 8px;
+                      margin-bottom: 20px; }
+        input[type=text] { flex: 1; min-width: 260px; padding: 12px;
+                           font-size: 16px; border: 1px solid #ccc;
+                           border-radius: 8px; }
+        select, button { padding: 12px; font-size: 15px;
+                         border: 1px solid #ccc; border-radius: 8px;
+                         background: white; }
+        button { background: #c0392b; color: white; border: none;
+                 cursor: pointer; font-weight: 600; padding: 12px 24px; }
+        button:hover { background: #a93226; }
+        .status { color: #666; font-size: 14px; margin-bottom: 16px; }
+        .grid { display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 16px; }
+        .card { background: white; border: 1px solid #eee;
+                border-radius: 10px; padding: 16px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+                transition: transform 0.15s, box-shadow 0.15s; }
+        .card:hover { transform: translateY(-2px);
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .card h3 { margin: 0 0 8px; color: #2c3e50; font-size: 18px; }
+        .meta { color: #666; font-size: 13px; line-height: 1.5; }
+        .rating { color: #f5a623; font-weight: bold; margin-top: 8px;
+                  font-size: 15px; }
+        .empty { text-align: center; color: #999; padding: 40px;
+                 font-size: 16px; }
+        .error { background: #fee; color: #c0392b; padding: 12px;
+                 border-radius: 8px; margin: 12px 0; }
+    </style>
+</head>
+<body>
+    <h1>🍽️ Recipe Finder</h1>
+    <p class="subtitle">Search 9,997 recipes across Pakistani, Indian, Bangladeshi, Afghan & Fusion cuisines</p>
+
+    <div class="search-box">
+        <input type="text" id="q"
+               placeholder="Search: chicken biryani, paneer, spicy grill..."
+               value="chicken">
+        <select id="cuisine">
+            <option value="">All Cuisines</option>
+            <option>Pakistani</option>
+            <option>Indian</option>
+            <option>Bangladeshi</option>
+            <option>Afghan</option>
+            <option>Fusion</option>
+        </select>
+        <select id="maxTime">
+            <option value="">Any Time</option>
+            <option value="30">≤ 30 min</option>
+            <option value="60">≤ 60 min</option>
+            <option value="120">≤ 2 hrs</option>
+        </select>
+        <button onclick="doSearch()">Search</button>
+    </div>
+
+    <div class="status" id="status"></div>
+    <div class="grid" id="results"></div>
+
+    <script>
+        const API = "http://localhost:8000";
+
+        async function doSearch() {
+            const q = document.getElementById("q").value.trim() || "chicken";
+            const cuisine = document.getElementById("cuisine").value;
+            const maxTime = document.getElementById("maxTime").value;
+            const status = document.getElementById("status");
+            const results = document.getElementById("results");
+
+            status.textContent = "Searching...";
+            results.innerHTML = "";
+
+            let url = `${API}/search?q=${encodeURIComponent(q)}&top_k=24`;
+            if (cuisine) url += `&cuisine=${cuisine}`;
+            if (maxTime) url += `&max_time=${maxTime}`;
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                render(data, q);
+            } catch (err) {
+                status.innerHTML =
+                    `<div class="error">⚠️ Could not connect to API. ` +
+                    `Make sure the uvicorn server is running on port 8000. ` +
+                    `(${err.message})</div>`;
+            }
+        }
+
+        function render(items, query) {
+            const status = document.getElementById("status");
+            const results = document.getElementById("results");
+
+            if (!items.length) {
+                status.textContent = `No recipes found for "${query}".`;
+                results.innerHTML = `<div class="empty">Try a different search term.</div>`;
+                return;
+            }
+
+            status.textContent = `Found ${items.length} recipes for "${query}"`;
+            results.innerHTML = items.map(r => `
+                <div class="card">
+                    <h3>${r.recipe_name}</h3>
+                    <div class="meta">
+                        ${r.cuisine} • ${r.category}<br>
+                        ${r.cooking_method} • ${r.difficulty} • ${r.total_time_minutes} min
+                    </div>
+                    <div class="rating">★ ${r.rating} </div>
+                </div>
+            `).join("");
+        }
+
+        // Search on Enter key
+        document.getElementById("q").addEventListener("keydown", e => {
+            if (e.key === "Enter") doSearch();
+        });
+
+        // Initial load
+        doSearch();
+    </script>
+</body>
+</html>
