@@ -6,8 +6,6 @@ __pycache__/
 *.faiss
 data/processed/
 models/
-data/*.csv
-!data/.gitkeep
 .vscode/
 .idea/
 *.log

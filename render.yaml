@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: recipe-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: HF_HUB_DISABLE_SYMLINKS_WARNING
+        value: 1
